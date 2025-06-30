@@ -8,46 +8,32 @@ public class SalaryInfo {
     private static final int NAME_INDEX = 1;
     private static final int HOURS_INDEX = 2;
     private static final int INCOME_INDEX = 3;
-    private static final String SEPARATOR = System.lineSeparator();
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     public String getSalaryInfo(String[] names, String[] data, String dateFrom, String dateTo) {
-        LocalDate startDate = LocalDate.parse(dateFrom.trim(), formatter);
-        LocalDate endDate = LocalDate.parse(dateTo.trim(), formatter);
-
-        int[] salaries = new int[names.length];
-
-        for (String entry : data) {
-            String[] parts = entry.split(" ");
-            LocalDate workDate = LocalDate.parse(parts[DATE_INDEX], formatter);
-            String name = parts[NAME_INDEX];
-            int hoursWorked = Integer.parseInt(parts[HOURS_INDEX]);
-            int incomePerHour = Integer.parseInt(parts[INCOME_INDEX]);
-
-            if (!workDate.isBefore(startDate) && !workDate.isAfter(endDate)) {
-                for (int i = 0; i < names.length; i++) {
-                    if (names[i].equals(name)) {
-                        salaries[i] += hoursWorked * incomePerHour;
-                        break;
-                    }
+        LocalDate newDateFrom = parseDate(dateFrom);
+        LocalDate newDateTo = parseDate(dateTo);
+        StringBuilder result = new StringBuilder("Report for period ")
+                .append(newDateFrom.format(FORMATTER))
+                .append(" - ")
+                .append(newDateTo.format(FORMATTER));
+        for (String name : names) {
+            int salary = 0;
+            for (String line : data) {
+                String[] parts = line.split("\s+");
+                LocalDate partDate = parseDate(parts[DATE_INDEX]);
+                if (parts[NAME_INDEX].trim().equals(name) && !partDate.isBefore(newDateFrom)
+                        && !partDate.isAfter(newDateTo)) {
+                    salary += Integer.parseInt(parts[HOURS_INDEX])
+                            * Integer.parseInt(parts[INCOME_INDEX]);
                 }
             }
+            result.append(System.lineSeparator()).append(name).append(" - ").append(salary);
         }
+        return result.toString();
+    }
 
-        StringBuilder report = new StringBuilder();
-        report.append("Report for period ")
-                .append(dateFrom)
-                .append(" - ")
-                .append(dateTo)
-                .append(SEPARATOR);
-
-        for (int i = 0; i < names.length; i++) {
-            report.append(names[i])
-                    .append(" - ")
-                    .append(salaries[i])
-                    .append(SEPARATOR);
-        }
-
-        return report.toString().trim();
+    private LocalDate parseDate(String date) {
+        return LocalDate.parse(date, FORMATTER);
     }
 }
